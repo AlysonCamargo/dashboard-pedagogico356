@@ -4,11 +4,14 @@
     --card-border: rgba(255, 255, 255, 0.08);
     --text-main: #f8fafc;
     --text-muted: #94a3b8;
-    --accent-1: #3b82f6; /* Blue */
-    --accent-2: #8b5cf6; /* Purple */
-    --accent-3: #ec4899; /* Pink */
+    --accent-1: #3b82f6;
+    /* Blue */
+    --accent-2: #8b5cf6;
+    /* Purple */
+    --accent-3: #ec4899;
+    /* Pink */
     --accent-glow: rgba(139, 92, 246, 0.4);
-    
+
     --font-main: 'Inter', sans-serif;
 }
 
@@ -42,7 +45,7 @@ body {
     left: -10%;
     width: 600px;
     height: 600px;
-    background: radial-gradient(circle, rgba(59,130,246,0.2) 0%, transparent 70%);
+    background: radial-gradient(circle, rgba(59, 130, 246, 0.2) 0%, transparent 70%);
 }
 
 .glow-2 {
@@ -50,7 +53,7 @@ body {
     right: -10%;
     width: 800px;
     height: 800px;
-    background: radial-gradient(circle, rgba(139,92,246,0.15) 0%, transparent 70%);
+    background: radial-gradient(circle, rgba(139, 92, 246, 0.15) 0%, transparent 70%);
 }
 
 .glow-3 {
@@ -58,7 +61,7 @@ body {
     left: 30%;
     width: 500px;
     height: 500px;
-    background: radial-gradient(circle, rgba(236,72,153,0.1) 0%, transparent 70%);
+    background: radial-gradient(circle, rgba(236, 72, 153, 0.1) 0%, transparent 70%);
 }
 
 .dashboard-container {
@@ -95,7 +98,7 @@ h1 {
 }
 
 .period-badge {
-    background: rgba(255,255,255,0.05);
+    background: rgba(255, 255, 255, 0.05);
     border: 1px solid var(--card-border);
     padding: 0.75rem 1.25rem;
     border-radius: 999px;
@@ -109,8 +112,8 @@ h1 {
 }
 
 .period-badge:hover {
-    background: rgba(255,255,255,0.1);
-    border-color: rgba(255,255,255,0.2);
+    background: rgba(255, 255, 255, 0.1);
+    border-color: rgba(255, 255, 255, 0.2);
 }
 
 /* KPI Grid */
@@ -135,7 +138,7 @@ h1 {
 
 .kpi-card:hover {
     transform: translateY(-4px);
-    border-color: rgba(255,255,255,0.2);
+    border-color: rgba(255, 255, 255, 0.2);
 }
 
 .kpi-title {
@@ -221,9 +224,12 @@ h1 {
     .charts-grid {
         grid-template-columns: repeat(2, 1fr);
     }
-    .span-2, .span-1 {
+
+    .span-2,
+    .span-1 {
         grid-column: span 1;
     }
+
     .chart-card.span-2 {
         grid-column: span 2;
     }
@@ -235,12 +241,15 @@ h1 {
         align-items: flex-start;
         gap: 1rem;
     }
+
     .charts-grid {
         grid-template-columns: 1fr;
     }
+
     .chart-card.span-2 {
         grid-column: span 1;
     }
+
     body {
         padding: 1rem;
     }

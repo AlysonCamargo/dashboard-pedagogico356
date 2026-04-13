@@ -10,16 +10,16 @@ Chart.defaults.plugins.tooltip.padding = 12;
 Chart.defaults.plugins.tooltip.cornerRadius = 8;
 
 const colors = {
-    primary:   '#3b82f6', // Blue
+    primary: '#3b82f6', // Blue
     primaryBg: 'rgba(59, 130, 246, 0.2)',
-    purple:    '#8b5cf6',
-    purpleBg:  'rgba(139, 92, 246, 0.2)',
-    emerald:   '#10b981',
+    purple: '#8b5cf6',
+    purpleBg: 'rgba(139, 92, 246, 0.2)',
+    emerald: '#10b981',
     emeraldBg: 'rgba(16, 185, 129, 0.2)',
-    pink:      '#ec4899',
-    amber:     '#f59e0b',
-    cyan:      '#06b6d4',
-    slate:     '#64748b'
+    pink: '#ec4899',
+    amber: '#f59e0b',
+    cyan: '#06b6d4',
+    slate: '#64748b'
 };
 
 const repeatedPalette = [colors.primary, colors.purple, colors.pink, colors.cyan, colors.emerald, colors.amber, colors.slate];
@@ -58,7 +58,7 @@ const pieOptions = {
     responsive: true,
     maintainAspectRatio: false,
     plugins: {
-        legend: { position: 'right', labels: { boxWidth: 12, padding: 15, font: {size: 11} } }
+        legend: { position: 'right', labels: { boxWidth: 12, padding: 15, font: { size: 11 } } }
     },
     cutout: '65%' // Makes it a doughnut
 };
@@ -77,7 +77,7 @@ window.addEventListener('load', async () => {
 
 function median(values) {
     if (values.length === 0) return 0;
-    values.sort((a,b) => a - b);
+    values.sort((a, b) => a - b);
     var half = Math.floor(values.length / 2);
     if (values.length % 2) return values[half];
     return (values[half - 1] + values[half]) / 2.0;
@@ -91,35 +91,35 @@ function processData(tsv) {
     const idxDate = headers.indexOf('Date Time');
     const idxCustomer = headers.indexOf('Customer Name');
     const idxDuration = headers.indexOf('Duration (mins.)');
-     // Search for Custom Fields, trimming as there might be a leading space
+    // Search for Custom Fields, trimming as there might be a leading space
     const idxCustom = headers.findIndex(h => h.trim() === 'Custom Fields');
 
     let totalCargaMinutos = 0;
     let durations = [];
-    
+
     // Aggregators
-    const weekdays = [0,0,0,0,0,0,0]; // Sun, Mon, Tue, Wed, Thu, Fri, Sat
+    const weekdays = [0, 0, 0, 0, 0, 0, 0]; // Sun, Mon, Tue, Wed, Thu, Fri, Sat
     const docentes = {};
     const turmas = {};
     const componentes = {};
     const recursos = {};
     const atividades = {};
-    
+
     let validRecords = 0;
 
     for (let i = 1; i < lines.length; i++) {
         const cols = lines[i].split('\t');
         if (cols.length < Math.max(idxDate, idxCustomer, idxDuration, idxCustom)) continue;
-        
+
         // Duration
         const duration = parseInt(cols[idxDuration]) || 0;
-        
+
         // Count all rows as records even if duration 0
         validRecords++;
-        
+
         totalCargaMinutos += duration;
         durations.push(duration);
-        
+
         // Date Time (DD/MM/YYYY HH:mm) -> To extract weekday
         const dateStr = cols[idxDate];
         if (dateStr) {
@@ -137,7 +137,7 @@ function processData(tsv) {
                 }
             }
         }
-        
+
         // Docentes
         const customer = cols[idxCustomer];
         if (customer && customer.trim() !== '') {
@@ -149,16 +149,16 @@ function processData(tsv) {
         if (customJSONStr && customJSONStr.trim() !== '') {
             try {
                 const customObj = JSON.parse(customJSONStr);
-                
+
                 const pub = customObj["Público"];
                 if (pub) turmas[pub] = (turmas[pub] || 0) + 1;
-                
+
                 const comp = customObj["Componente"];
                 if (comp) componentes[comp] = (componentes[comp] || 0) + 1;
-                
+
                 const recurso = customObj["PRINCIPAL RECURSO"];
                 if (recurso) recursos[recurso] = (recursos[recurso] || 0) + 1;
-                
+
                 const ativ = customObj["TIPO DE ATIVIDADE"];
                 if (ativ) atividades[ativ] = (atividades[ativ] || 0) + 1;
             } catch (e) {
@@ -181,11 +181,10 @@ function sortObject(obj) {
     return Object.entries(obj).sort((a, b) => b[1] - a[1]);
 }
 
-function prepareScrollContainer(canvasId, itemsLength) {
+function prepareScrollContainer(canvasId, itemsLength, isHorizontal) {
     const canvas = document.getElementById(canvasId);
     if (!canvas) return;
     const parent = canvas.parentElement;
-    parent.style.overflowY = 'auto';
     
     let inner = parent.querySelector('.chart-inner');
     if (!inner) {
@@ -195,15 +194,71 @@ function prepareScrollContainer(canvasId, itemsLength) {
         inner.appendChild(canvas);
     }
     
-    const reqHeight = Math.max(250, itemsLength * 35);
-    inner.style.position = 'relative';
-    inner.style.height = reqHeight + 'px';
-    inner.style.width = '100%';
+    if (isHorizontal && itemsLength > 4) {
+        parent.style.overflowY = 'auto';
+        const reqHeight = Math.max(250, itemsLength * 35);
+        inner.style.position = 'relative';
+        inner.style.height = reqHeight + 'px';
+        inner.style.width = '100%';
+    } else {
+        parent.style.overflowY = 'hidden';
+        inner.style.position = 'relative';
+        inner.style.height = '100%';
+        inner.style.width = '100%';
+    }
+}
+
+function renderSmartChart(canvasId, objData, fallbackType, maxForFallback) {
+    const dataArr = sortObject(objData);
+    const labels = dataArr.map(d => d[0]);
+    const values = dataArr.map(d => d[1]);
+    
+    let chartType = 'bar';
+    let chartOptions = barOptionsX; 
+    let isHorizontal = true;
+
+    if (labels.length <= maxForFallback) {
+        if (fallbackType === 'pie' || fallbackType === 'doughnut') {
+            chartType = fallbackType;
+            chartOptions = {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { position: 'right', labels: { padding: 12, boxWidth: 12, font: {size: 11, family: "'Inter', sans-serif"} } }
+                },
+                cutout: fallbackType === 'doughnut' ? '65%' : '0%'
+            };
+            isHorizontal = false;
+        } else if (fallbackType === 'vertical') {
+            chartType = 'bar';
+            chartOptions = barOptionsY;
+            isHorizontal = false;
+        }
+    }
+
+    prepareScrollContainer(canvasId, labels.length, isHorizontal);
+
+    new Chart(document.getElementById(canvasId), {
+        type: chartType,
+        data: {
+            labels: labels,
+            datasets: [{
+                label: 'Agendamentos',
+                data: values,
+                backgroundColor: getPaletteColors(labels.length),
+                borderWidth: chartType === 'pie' || chartType === 'doughnut' ? 0 : undefined,
+                borderRadius: chartType === 'bar' ? (isHorizontal ? 4 : 6) : 0,
+                hoverOffset: chartType === 'pie' || chartType === 'doughnut' ? 6 : 0
+            }]
+        },
+        options: chartOptions
+    });
 }
 
 function renderCharts(data) {
-    // 1. Weekday
+    // 1. Weekday - Sem Scroll, sempre Vertical
     const wdLabels = ['Domingo', 'Segunda-feira', 'Terça-feira', 'Quarta-feira', 'Quinta-feira', 'Sexta-feira', 'Sábado'];
+    prepareScrollContainer('chartWeekday', 5, false);
     new Chart(document.getElementById('chartWeekday'), {
         type: 'bar',
         data: {
@@ -219,88 +274,10 @@ function renderCharts(data) {
         options: barOptionsY
     });
 
-    // 2. Docentes
-    const docArr = sortObject(data.docentes);
-    prepareScrollContainer('chartDocentes', docArr.length);
-    new Chart(document.getElementById('chartDocentes'), {
-        type: 'bar',
-        data: {
-            labels: docArr.map(d => d[0]),
-            datasets: [{
-                label: 'Agendamentos',
-                data: docArr.map(d => d[1]),
-                backgroundColor: getPaletteColors(docArr.length),
-                borderRadius: 4
-            }]
-        },
-        options: barOptionsX
-    });
-
-    // 3. Turmas (Público)
-    const turmasArr = sortObject(data.turmas);
-    prepareScrollContainer('chartPublico', turmasArr.length);
-    new Chart(document.getElementById('chartPublico'), {
-        type: 'bar',
-        data: {
-            labels: turmasArr.map(d => d[0]),
-            datasets: [{
-                label: 'Agendamentos',
-                data: turmasArr.map(d => d[1]),
-                backgroundColor: getPaletteColors(turmasArr.length),
-                borderRadius: 4
-            }]
-        },
-        options: barOptionsX
-    });
-
-    // 4. Componentes
-    const compArr = sortObject(data.componentes);
-    prepareScrollContainer('chartComponentes', compArr.length);
-    new Chart(document.getElementById('chartComponentes'), {
-        type: 'bar',
-        data: {
-            labels: compArr.map(d => d[0]),
-            datasets: [{
-                label: 'Agendamentos',
-                data: compArr.map(d => d[1]),
-                backgroundColor: getPaletteColors(compArr.length),
-                borderRadius: 4
-            }]
-        },
-        options: barOptionsX
-    });
-
-    // 5. Recursos
-    const recArr = sortObject(data.recursos);
-    prepareScrollContainer('chartRecursos', recArr.length);
-    new Chart(document.getElementById('chartRecursos'), {
-        type: 'bar',
-        data: {
-            labels: recArr.map(d => d[0]),
-            datasets: [{
-                label: 'Agendamentos',
-                data: recArr.map(d => d[1]),
-                backgroundColor: getPaletteColors(recArr.length),
-                borderRadius: 4
-            }]
-        },
-        options: barOptionsX
-    });
-
-    // 6. Atividades
-    const ativArr = sortObject(data.atividades);
-    prepareScrollContainer('chartAtividades', ativArr.length);
-    new Chart(document.getElementById('chartAtividades'), {
-        type: 'bar',
-        data: {
-            labels: ativArr.map(d => d[0]),
-            datasets: [{
-                label: 'Agendamentos',
-                data: ativArr.map(d => d[1]),
-                backgroundColor: getPaletteColors(ativArr.length),
-                borderRadius: 4
-            }]
-        },
-        options: barOptionsX
-    });
+    // Gráficos Inteligentes (Decidem ser Barras com Scroll se houverem muitos itens)
+    renderSmartChart('chartDocentes', data.docentes, 'horizontal', 0); // Sempre horizontal devido aos nomes longos
+    renderSmartChart('chartPublico', data.turmas, 'pie', 6);
+    renderSmartChart('chartComponentes', data.componentes, 'doughnut', 5);
+    renderSmartChart('chartRecursos', data.recursos, 'horizontal', 0); // Geralmente melhor horizontal
+    renderSmartChart('chartAtividades', data.atividades, 'doughnut', 4); // Doughnut apenas se for pouco
 }
