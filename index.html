@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BI Dashboard - Agendamentos (Março 2026)</title>
+    <!-- Fonts: Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+    <div class="ambient-glow glow-1"></div>
+    <div class="ambient-glow glow-2"></div>
+    <div class="ambient-glow glow-3"></div>
+
+    <div class="dashboard-container">
+        <header class="header">
+            <div>
+                <h1>Relatório de Agendamentos</h1>
+                <p class="subtitle">Visão Geral - Março 2026 (Utilização dos Espaços)</p>
+            </div>
+            <div class="header-period">
+                <div class="period-badge">
+                    <span class="icon">📅</span> 02 a 31 de Março, 2026
+                </div>
+            </div>
+        </header>
+
+        <!-- KPIs Section -->
+        <section class="kpi-grid">
+            <div class="kpi-card">
+                <div class="kpi-title">Agendamentos</div>
+                <div class="kpi-value" id="kpi-agendamentos">146</div>
+                <div class="kpi-trend positive">Total do Período</div>
+            </div>
+            <div class="kpi-card">
+                <div class="kpi-title">Carga Total (h)</div>
+                <div class="kpi-value" id="kpi-carga">233.17</div>
+                <div class="kpi-trend">Horas agendadas no mês</div>
+            </div>
+            <div class="kpi-card">
+                <div class="kpi-title">Duração Mediana</div>
+                <div class="kpi-value" id="kpi-duracao">50</div>
+                <div class="kpi-trend">Minutos por sessão</div>
+            </div>
+        </section>
+
+        <!-- Charts Grid -->
+        <main class="charts-grid">
+            <!-- Row 1 -->
+            <div class="chart-card span-1">
+                <div class="chart-header">
+                    <h2>Distribuição por Dia da Semana</h2>
+                    <span class="tag">Dias Úteis</span>
+                </div>
+                <div class="chart-wrapper">
+                    <canvas id="chartWeekday"></canvas>
+                </div>
+            </div>
+            <div class="chart-card span-1">
+                <div class="chart-header">
+                    <h2>Maior utilização por Professor</h2>
+                </div>
+                <div class="chart-wrapper">
+                    <canvas id="chartDocentes"></canvas>
+                </div>
+            </div>
+
+            <!-- Row 2 -->
+            <div class="chart-card span-1">
+                <div class="chart-header">
+                    <h2>Turmas que mais utilizaram</h2>
+                </div>
+                <div class="chart-wrapper">
+                    <canvas id="chartPublico"></canvas>
+                </div>
+            </div>
+            <div class="chart-card span-1">
+                <div class="chart-header">
+                    <h2>Componentes Curriculares</h2>
+                </div>
+                <div class="chart-wrapper">
+                    <canvas id="chartComponentes"></canvas>
+                </div>
+            </div>
+            <div class="chart-card span-1">
+                <div class="chart-header">
+                    <h2>Principais Recursos Utilizados</h2>
+                </div>
+                <div class="chart-wrapper">
+                    <canvas id="chartRecursos"></canvas>
+                </div>
+            </div>
+
+            <!-- Row 3 -->
+            <div class="chart-card span-1">
+                <div class="chart-header">
+                    <h2>Atividades mais utilizadas</h2>
+                </div>
+                <div class="chart-wrapper">
+                    <canvas id="chartAtividades"></canvas>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+
+</html>
