@@ -130,6 +130,7 @@ function processData(tsv) {
     const headers = lines[0].split('\t');
     const idxDate = headers.indexOf('Date Time');
     const idxCustomer = headers.indexOf('Customer Name');
+    const idxStaff = headers.indexOf('Staff Name');
     const idxDuration = headers.indexOf('Duration (mins.)');
     const idxCustom = headers.findIndex(h => h.trim() === 'Custom Fields');
 
@@ -180,6 +181,11 @@ function processData(tsv) {
                 customer = customer.replace(/\s+/g, ' ').trim();
             }
         }
+
+        let lab = (idxStaff !== -1 && cols[idxStaff]) ? cols[idxStaff].trim() : '';
+        if (lab.includes('CE356')) {
+            lab = lab.replace(/ CE356/g, '').trim();
+        }
         
         let pub = null, comp = null, recurso = null, ativ = null;
         const customJSONStr = cols[idxCustom];
@@ -202,7 +208,8 @@ function processData(tsv) {
             turma: pub,
             componente: comp,
             recurso: recurso,
-            atividade: ativ
+            atividade: ativ,
+            laboratorio: lab
         });
     }
 
@@ -219,6 +226,7 @@ function aggregateData(records) {
     const componentes = {};
     const recursos = {};
     const atividades = {};
+    const laboratorios = {};
 
     let validRecords = 0;
 
@@ -233,17 +241,24 @@ function aggregateData(records) {
         if (rec.componente) componentes[rec.componente] = (componentes[rec.componente] || 0) + 1;
         if (rec.recurso) recursos[rec.recurso] = (recursos[rec.recurso] || 0) + 1;
         if (rec.atividade) atividades[rec.atividade] = (atividades[rec.atividade] || 0) + 1;
+        if (rec.laboratorio) {
+            const labs = rec.laboratorio.split(';');
+            for (let l of labs) {
+                l = l.trim();
+                if (l) laboratorios[l] = (laboratorios[l] || 0) + 1;
+            }
+        }
     }
 
     document.getElementById('kpi-agendamentos').textContent = validRecords;
     document.getElementById('kpi-carga').textContent = (totalCargaMinutos / 60).toFixed(2);
     document.getElementById('kpi-duracao').textContent = median(durations);
 
-    renderCharts({ weekdays, docentes, turmas, componentes, recursos, atividades });
+    renderCharts({ weekdays, docentes, turmas, componentes, recursos, atividades, laboratorios });
 }
 
 function populateFilters() {
-    const profs = new Set(), turmas = new Set(), comps = new Set(), recs = new Set(), ativs = new Set();
+    const profs = new Set(), turmas = new Set(), comps = new Set(), recs = new Set(), ativs = new Set(), labsObj = new Set();
     
     for (const rec of allRecords) {
         if (rec.professor) profs.add(rec.professor);
@@ -251,6 +266,9 @@ function populateFilters() {
         if (rec.componente) comps.add(rec.componente);
         if (rec.recurso) recs.add(rec.recurso);
         if (rec.atividade) ativs.add(rec.atividade);
+        if (rec.laboratorio) {
+            rec.laboratorio.split(';').forEach(l => { if (l.trim()) labsObj.add(l.trim()); });
+        }
     }
 
     const fillSelect = (id, set) => {
@@ -272,8 +290,9 @@ function populateFilters() {
     fillSelect('filter-componente', comps);
     fillSelect('filter-recurso', recs);
     fillSelect('filter-atividade', ativs);
+    fillSelect('filter-laboratorio', labsObj);
     
-    const selects = ['filter-professor', 'filter-turma', 'filter-componente', 'filter-recurso', 'filter-atividade'];
+    const selects = ['filter-professor', 'filter-turma', 'filter-componente', 'filter-recurso', 'filter-atividade', 'filter-laboratorio'];
     selects.forEach(id => {
         document.getElementById(id).addEventListener('change', applyFilters);
     });
@@ -290,6 +309,7 @@ function applyFilters() {
     const comp = document.getElementById('filter-componente').value;
     const rec = document.getElementById('filter-recurso').value;
     const ativ = document.getElementById('filter-atividade').value;
+    const lab = document.getElementById('filter-laboratorio').value;
 
     const filtered = allRecords.filter(r => {
         if (prof && r.professor !== prof) return false;
@@ -297,6 +317,7 @@ function applyFilters() {
         if (comp && r.componente !== comp) return false;
         if (rec && r.recurso !== rec) return false;
         if (ativ && r.atividade !== ativ) return false;
+        if (lab && !(r.laboratorio && r.laboratorio.includes(lab))) return false;
         return true;
     });
 
@@ -415,4 +436,5 @@ function renderCharts(data) {
     renderSmartChart('chartComponentes', data.componentes, 'doughnut', 5);
     renderSmartChart('chartRecursos', data.recursos, 'horizontal', 0); // Geralmente melhor horizontal
     renderSmartChart('chartAtividades', data.atividades, 'doughnut', 4); // Doughnut apenas se for pouco
+    renderSmartChart('chartLaboratorios', data.laboratorios, 'pie', 6);
 }

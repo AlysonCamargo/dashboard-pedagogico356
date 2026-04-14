@@ -1,0 +1,21 @@
+Date Time
+Customer Name
+Customer Email
+Customer Phone
+Customer Address
+Staff
+Staff Name
+Staff Email
+Service
+Location
+Duration (mins.)
+Pricing Type
+Price
+Currency
+Cc Attendees
+Signed Up Attendees Count
+Text Notifications Enabled
+ Custom Fields
+Event Type
+Booking Id
+Tracking Data
