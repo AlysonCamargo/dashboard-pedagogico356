@@ -1,13 +1,29 @@
+let currentTheme = localStorage.getItem('theme') || 'light';
+if (currentTheme === 'dark') {
+    document.documentElement.setAttribute('data-theme', 'dark');
+}
+
 // Global Configuration for Chart.js
-Chart.defaults.color = '#94a3b8';
 Chart.defaults.font.family = "'Inter', sans-serif";
-Chart.defaults.plugins.tooltip.backgroundColor = 'rgba(15, 23, 42, 0.9)';
-Chart.defaults.plugins.tooltip.titleColor = '#fff';
-Chart.defaults.plugins.tooltip.bodyColor = '#cbd5e1';
-Chart.defaults.plugins.tooltip.borderColor = 'rgba(255,255,255,0.1)';
 Chart.defaults.plugins.tooltip.borderWidth = 1;
 Chart.defaults.plugins.tooltip.padding = 12;
 Chart.defaults.plugins.tooltip.cornerRadius = 8;
+
+function applyChartTheme() {
+    const style = getComputedStyle(document.documentElement);
+    const grid = style.getPropertyValue('--chart-grid').trim() || 'rgba(0,0,0,0.05)';
+    const textMuted = style.getPropertyValue('--text-muted').trim() || '#94a3b8';
+    
+    Chart.defaults.color = textMuted;
+    Chart.defaults.plugins.tooltip.backgroundColor = style.getPropertyValue('--chart-tooltip-bg').trim();
+    Chart.defaults.plugins.tooltip.titleColor = style.getPropertyValue('--chart-tooltip-text').trim();
+    Chart.defaults.plugins.tooltip.bodyColor = textMuted;
+    Chart.defaults.plugins.tooltip.borderColor = style.getPropertyValue('--card-border').trim();
+    
+    barOptionsY.scales.y.grid.color = grid;
+    barOptionsY.scales.x.grid.color = grid;
+    barOptionsX.scales.x.grid.color = grid;
+}
 
 const colors = {
     primary: '#3b82f6', // Blue
@@ -38,8 +54,8 @@ const barOptionsY = {
     maintainAspectRatio: false,
     plugins: { legend: { display: false } },
     scales: {
-        y: { grid: { display: false, color: 'rgba(255,255,255,0.05)' }, border: { display: false }, beginAtZero: true },
-        x: { grid: { color: 'rgba(255,255,255,0.05)' }, border: { display: false } }
+        y: { grid: { display: false, color: 'rgba(0,0,0,0.05)' }, border: { display: false }, beginAtZero: true },
+        x: { grid: { color: 'rgba(0,0,0,0.05)' }, border: { display: false } }
     }
 };
 
@@ -49,7 +65,7 @@ const barOptionsX = {
     maintainAspectRatio: false,
     plugins: { legend: { display: false } },
     scales: {
-        x: { grid: { color: 'rgba(255,255,255,0.05)' }, border: { display: false }, beginAtZero: true },
+        x: { grid: { color: 'rgba(0,0,0,0.05)' }, border: { display: false }, beginAtZero: true },
         y: { grid: { display: false }, border: { display: false } }
     }
 };
@@ -68,6 +84,27 @@ let chartInstances = {};
 
 // Data processing
 window.addEventListener('load', async () => {
+    applyChartTheme();
+
+    // Theme setup
+    const themeToggle = document.getElementById('theme-toggle');
+    if (themeToggle) {
+        const icon = themeToggle.querySelector('.icon');
+        icon.textContent = currentTheme === 'dark' ? '🌙' : '🌞';
+        
+        themeToggle.addEventListener('click', () => {
+            currentTheme = currentTheme === 'light' ? 'dark' : 'light';
+            document.documentElement.setAttribute('data-theme', currentTheme);
+            localStorage.setItem('theme', currentTheme);
+            icon.textContent = currentTheme === 'dark' ? '🌙' : '🌞';
+            
+            setTimeout(() => {
+                applyChartTheme();
+                applyFilters(); // will re-render all graphs explicitly from current data 
+            }, 10);
+        });
+    }
+
     try {
         const response = await fetch('BookingsReportingData.tsv');
         if (!response.ok) throw new Error('Não foi possível carregar os dados.');
