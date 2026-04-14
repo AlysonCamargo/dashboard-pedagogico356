@@ -63,6 +63,9 @@ const pieOptions = {
     cutout: '65%' // Makes it a doughnut
 };
 
+let allRecords = [];
+let chartInstances = {};
+
 // Data processing
 window.addEventListener('load', async () => {
     try {
@@ -91,39 +94,20 @@ function processData(tsv) {
     const idxDate = headers.indexOf('Date Time');
     const idxCustomer = headers.indexOf('Customer Name');
     const idxDuration = headers.indexOf('Duration (mins.)');
-    // Search for Custom Fields, trimming as there might be a leading space
     const idxCustom = headers.findIndex(h => h.trim() === 'Custom Fields');
 
-    let totalCargaMinutos = 0;
-    let durations = [];
-
-    // Aggregators
-    const weekdays = [0, 0, 0, 0, 0, 0, 0]; // Sun, Mon, Tue, Wed, Thu, Fri, Sat
-    const docentes = {};
-    const turmas = {};
-    const componentes = {};
-    const recursos = {};
-    const atividades = {};
-
-    let validRecords = 0;
+    allRecords = [];
 
     for (let i = 1; i < lines.length; i++) {
         const cols = lines[i].split('\t');
         if (cols.length < Math.max(idxDate, idxCustomer, idxDuration, idxCustom)) continue;
 
-        // Duration
         const duration = parseInt(cols[idxDuration]) || 0;
-
-        // Count all rows as records even if duration 0
-        validRecords++;
-
-        totalCargaMinutos += duration;
-        durations.push(duration);
-
-        // Date Time (DD/MM/YYYY HH:mm) -> To extract weekday
-        const dateStr = cols[idxDate];
-        if (dateStr) {
-            const parts = dateStr.split(' ');
+        
+        let weekday = null;
+        let dateObjStr = cols[idxDate];
+        if (dateObjStr) {
+            const parts = dateObjStr.split(' ');
             if (parts.length > 0) {
                 const dateParts = parts[0].split('/');
                 if (dateParts.length === 3) {
@@ -132,49 +116,134 @@ function processData(tsv) {
                     const year = parseInt(dateParts[2]);
                     const dateObj = new Date(year, month, day);
                     if (!isNaN(dateObj.getTime())) {
-                        weekdays[dateObj.getDay()]++;
+                        weekday = dateObj.getDay();
                     }
                 }
             }
         }
 
-        // Docentes
-        const customer = cols[idxCustomer];
-        if (customer && customer.trim() !== '') {
-            docentes[customer] = (docentes[customer] || 0) + 1;
-        }
-
-        // Custom Fields
+        const customer = cols[idxCustomer] ? cols[idxCustomer].trim() : '';
+        
+        let pub = null, comp = null, recurso = null, ativ = null;
         const customJSONStr = cols[idxCustom];
         if (customJSONStr && customJSONStr.trim() !== '') {
             try {
                 const customObj = JSON.parse(customJSONStr);
-
-                const pub = customObj["Público"];
-                if (pub) turmas[pub] = (turmas[pub] || 0) + 1;
-
-                const comp = customObj["Componente"];
-                if (comp) componentes[comp] = (componentes[comp] || 0) + 1;
-
-                const recurso = customObj["PRINCIPAL RECURSO"];
-                if (recurso) recursos[recurso] = (recursos[recurso] || 0) + 1;
-
-                const ativ = customObj["TIPO DE ATIVIDADE"];
-                if (ativ) atividades[ativ] = (atividades[ativ] || 0) + 1;
+                pub = customObj["Público"] || null;
+                comp = customObj["Componente"] || null;
+                recurso = customObj["PRINCIPAL RECURSO"] || null;
+                ativ = customObj["TIPO DE ATIVIDADE"] || null;
             } catch (e) {
-                // Ignore parse errors for specific rows
                 console.warn('Invalid JSON in row', i, customJSONStr);
             }
         }
+
+        allRecords.push({
+            duration,
+            weekday,
+            professor: customer,
+            turma: pub,
+            componente: comp,
+            recurso: recurso,
+            atividade: ativ
+        });
     }
 
-    // Update KPIs
+    populateFilters();
+    applyFilters();
+}
+
+function aggregateData(records) {
+    let totalCargaMinutos = 0;
+    let durations = [];
+    const weekdays = [0, 0, 0, 0, 0, 0, 0];
+    const docentes = {};
+    const turmas = {};
+    const componentes = {};
+    const recursos = {};
+    const atividades = {};
+
+    let validRecords = 0;
+
+    for (const rec of records) {
+        validRecords++;
+        totalCargaMinutos += rec.duration;
+        durations.push(rec.duration);
+
+        if (rec.weekday !== null) weekdays[rec.weekday]++;
+        if (rec.professor !== '') docentes[rec.professor] = (docentes[rec.professor] || 0) + 1;
+        if (rec.turma) turmas[rec.turma] = (turmas[rec.turma] || 0) + 1;
+        if (rec.componente) componentes[rec.componente] = (componentes[rec.componente] || 0) + 1;
+        if (rec.recurso) recursos[rec.recurso] = (recursos[rec.recurso] || 0) + 1;
+        if (rec.atividade) atividades[rec.atividade] = (atividades[rec.atividade] || 0) + 1;
+    }
+
     document.getElementById('kpi-agendamentos').textContent = validRecords;
     document.getElementById('kpi-carga').textContent = (totalCargaMinutos / 60).toFixed(2);
     document.getElementById('kpi-duracao').textContent = median(durations);
 
-    // Render Charts
     renderCharts({ weekdays, docentes, turmas, componentes, recursos, atividades });
+}
+
+function populateFilters() {
+    const profs = new Set(), turmas = new Set(), comps = new Set(), recs = new Set(), ativs = new Set();
+    
+    for (const rec of allRecords) {
+        if (rec.professor) profs.add(rec.professor);
+        if (rec.turma) turmas.add(rec.turma);
+        if (rec.componente) comps.add(rec.componente);
+        if (rec.recurso) recs.add(rec.recurso);
+        if (rec.atividade) ativs.add(rec.atividade);
+    }
+
+    const fillSelect = (id, set) => {
+        const select = document.getElementById(id);
+        const sorted = Array.from(set).sort();
+        const first = select.options[0];
+        select.innerHTML = '';
+        select.appendChild(first);
+        sorted.forEach(val => {
+            const opt = document.createElement('option');
+            opt.value = val;
+            opt.textContent = val;
+            select.appendChild(opt);
+        });
+    };
+
+    fillSelect('filter-professor', profs);
+    fillSelect('filter-turma', turmas);
+    fillSelect('filter-componente', comps);
+    fillSelect('filter-recurso', recs);
+    fillSelect('filter-atividade', ativs);
+    
+    const selects = ['filter-professor', 'filter-turma', 'filter-componente', 'filter-recurso', 'filter-atividade'];
+    selects.forEach(id => {
+        document.getElementById(id).addEventListener('change', applyFilters);
+    });
+
+    document.getElementById('btn-clear-filters').addEventListener('click', () => {
+        selects.forEach(id => document.getElementById(id).value = '');
+        applyFilters();
+    });
+}
+
+function applyFilters() {
+    const prof = document.getElementById('filter-professor').value;
+    const turma = document.getElementById('filter-turma').value;
+    const comp = document.getElementById('filter-componente').value;
+    const rec = document.getElementById('filter-recurso').value;
+    const ativ = document.getElementById('filter-atividade').value;
+
+    const filtered = allRecords.filter(r => {
+        if (prof && r.professor !== prof) return false;
+        if (turma && r.turma !== turma) return false;
+        if (comp && r.componente !== comp) return false;
+        if (rec && r.recurso !== rec) return false;
+        if (ativ && r.atividade !== ativ) return false;
+        return true;
+    });
+
+    aggregateData(filtered);
 }
 
 function sortObject(obj) {
@@ -238,7 +307,11 @@ function renderSmartChart(canvasId, objData, fallbackType, maxForFallback) {
 
     prepareScrollContainer(canvasId, labels.length, isHorizontal);
 
-    new Chart(document.getElementById(canvasId), {
+    if (chartInstances[canvasId]) {
+        chartInstances[canvasId].destroy();
+    }
+
+    chartInstances[canvasId] = new Chart(document.getElementById(canvasId), {
         type: chartType,
         data: {
             labels: labels,
@@ -259,7 +332,12 @@ function renderCharts(data) {
     // 1. Weekday - Sem Scroll, sempre Vertical
     const wdLabels = ['Domingo', 'Segunda-feira', 'Terça-feira', 'Quarta-feira', 'Quinta-feira', 'Sexta-feira', 'Sábado'];
     prepareScrollContainer('chartWeekday', 5, false);
-    new Chart(document.getElementById('chartWeekday'), {
+    
+    if (chartInstances['chartWeekday']) {
+        chartInstances['chartWeekday'].destroy();
+    }
+    
+    chartInstances['chartWeekday'] = new Chart(document.getElementById('chartWeekday'), {
         type: 'bar',
         data: {
             labels: wdLabels.slice(1, 6),
