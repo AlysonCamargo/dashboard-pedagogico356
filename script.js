@@ -122,7 +122,27 @@ function processData(tsv) {
             }
         }
 
-        const customer = cols[idxCustomer] ? cols[idxCustomer].trim() : '';
+        let customer = cols[idxCustomer] ? cols[idxCustomer].trim() : '';
+
+        // Name Normalization
+        if (customer) {
+            const lower = customer.toLowerCase();
+            if ((lower.includes('andrea') && lower.includes('ba')) || lower.includes('andrea batoni')) {
+                customer = 'Andrea Barassa';
+            } else if (lower.includes('eliana')) {
+                customer = 'Eliana Machado';
+            } else if (lower.includes('jose and') || lower.includes('josé and')) {
+                customer = 'José André';
+            } else if (lower.includes('manoela')) {
+                customer = 'Manoela Fonseca';
+            } else if (lower.includes('marina')) {
+                customer = 'Marina';
+            } else if (lower.includes('samanta')) {
+                customer = 'Samanta';
+            } else {
+                customer = customer.replace(/\s+/g, ' ').trim();
+            }
+        }
         
         let pub = null, comp = null, recurso = null, ativ = null;
         const customJSONStr = cols[idxCustom];
