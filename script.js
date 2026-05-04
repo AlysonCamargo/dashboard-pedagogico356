@@ -106,7 +106,7 @@ window.addEventListener('load', async () => {
     }
 
     try {
-        const response = await fetch('BookingsReportingData.tsv');
+        const response = await fetch('BookingsReportingDataAbril.tsv');
         if (!response.ok) throw new Error('Não foi possível carregar os dados.');
         const tsvText = await response.text();
         processData(tsvText);
@@ -177,6 +177,12 @@ function processData(tsv) {
                 customer = 'Marina';
             } else if (lower.includes('samanta')) {
                 customer = 'Samanta';
+            } else if (lower.includes('ederson')) {
+                customer = 'Ederson';
+            } else if (lower.includes('tamires')) {
+                customer = 'Tamires';
+            } else if (lower.includes('alyson') || lower.includes('alison')) {
+                customer = 'Alyson';
             } else {
                 customer = customer.replace(/\s+/g, ' ').trim();
             }
@@ -185,6 +191,16 @@ function processData(tsv) {
         let lab = (idxStaff !== -1 && cols[idxStaff]) ? cols[idxStaff].trim() : '';
         if (lab.includes('CE356')) {
             lab = lab.replace(/ CE356/g, '').trim();
+        }
+        if (lab.includes(' 356')) {
+            lab = lab.replace(/ 356/g, '').trim();
+        }
+        if (lab) {
+            lab = Array.from(new Set(lab.split(';').map(l => {
+                let s = l.trim();
+                if (s === 'LCT') return 'LMT';
+                return s;
+            }))).filter(Boolean).join(';');
         }
         
         let pub = null, comp = null, recurso = null, ativ = null;
