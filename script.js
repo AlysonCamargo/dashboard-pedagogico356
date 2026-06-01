@@ -106,7 +106,7 @@ window.addEventListener('load', async () => {
     }
 
     try {
-        const response = await fetch('BookingsReportingDataAbril.tsv');
+        const response = await fetch('BookingsReportingDataMaio.tsv');
         if (!response.ok) throw new Error('Não foi possível carregar os dados.');
         const tsvText = await response.text();
         processData(tsvText);
@@ -128,11 +128,12 @@ function processData(tsv) {
     if (lines.length < 2) return;
 
     const headers = lines[0].split('\t');
-    const idxDate = headers.indexOf('Date Time');
-    const idxCustomer = headers.indexOf('Customer Name');
-    const idxStaff = headers.indexOf('Staff Name');
-    const idxDuration = headers.indexOf('Duration (mins.)');
-    const idxCustom = headers.findIndex(h => h.trim() === 'Custom Fields');
+    const getIdx = (keys) => headers.findIndex(h => keys.includes(h.trim()));
+    const idxDate = getIdx(['Date Time', 'Data e Hora']);
+    const idxCustomer = getIdx(['Customer Name', 'Nome do Cliente']);
+    const idxStaff = getIdx(['Staff Name', 'Nome do membro da equipe']);
+    const idxDuration = getIdx(['Duration (mins.)', 'Duração (min.)']);
+    const idxCustom = getIdx(['Custom Fields', 'Campos personalizados']);
 
     allRecords = [];
 
@@ -183,6 +184,8 @@ function processData(tsv) {
                 customer = 'Tamires';
             } else if (lower.includes('alyson') || lower.includes('alison')) {
                 customer = 'Alyson';
+            } else if (lower.includes('rosangela') || lower.includes('rosângela')) {
+                customer = 'Rosangela';
             } else {
                 customer = customer.replace(/\s+/g, ' ').trim();
             }
