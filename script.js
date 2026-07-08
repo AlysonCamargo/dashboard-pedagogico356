@@ -106,7 +106,7 @@ window.addEventListener('load', async () => {
     }
 
     try {
-        const response = await fetch('BookingsReportingDataMaio.tsv');
+        const response = await fetch('BookingsReportingDataJunho.tsv');
         if (!response.ok) throw new Error('Não foi possível carregar os dados.');
         const tsvText = await response.text();
         processData(tsvText);
@@ -184,6 +184,8 @@ function processData(tsv) {
                 customer = 'Tamires';
             } else if (lower.includes('alyson') || lower.includes('alison')) {
                 customer = 'Alyson';
+            } else if (lower.includes('juliana')) {
+                customer = 'Juliana Petroli';
             } else if (lower.includes('rosangela') || lower.includes('rosângela')) {
                 customer = 'Rosangela';
             } else {
