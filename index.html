@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>BI Dashboard - Agendamentos (Junho 2026)</title>
+    <title>BI Dashboard - Agendamentos 2026 (1º Semestre)</title>
     <!-- Fonts: Inter -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -23,17 +23,23 @@
         <header class="header">
             <div>
                 <h1>Relatório de Agendamentos</h1>
-                <p class="subtitle">Visão Geral - Junho 2026 (Utilização dos Espaços)</p>
+                <p class="subtitle" id="dashboard-subtitle">Visão Geral - 2026 (Utilização dos Espaços)</p>
             </div>
             <div class="header-period">
                 <button id="theme-toggle" class="theme-toggle" aria-label="Alternar Tema">
                     <span class="icon">🌞</span>
                 </button>
-                <div class="period-badge">
-                    <span class="icon">📅</span> 01 a 30 de Junho, 2026
-                </div>
             </div>
         </header>
+
+        <!-- Month Tab Selector -->
+        <nav class="month-tabs" role="tablist" aria-label="Selecionar período">
+            <button class="month-tab" data-file="BookingsReportingData.tsv" data-label="Março 2026" data-period="01 a 31 de Março, 2026" role="tab">Março</button>
+            <button class="month-tab" data-file="BookingsReportingDataAbril.tsv" data-label="Abril 2026" data-period="01 a 30 de Abril, 2026" role="tab">Abril</button>
+            <button class="month-tab" data-file="BookingsReportingDataMaio.tsv" data-label="Maio 2026" data-period="01 a 31 de Maio, 2026" role="tab">Maio</button>
+            <button class="month-tab" data-file="BookingsReportingDataJunho.tsv" data-label="Junho 2026" data-period="01 a 30 de Junho, 2026" role="tab">Junho</button>
+            <button class="month-tab active" data-file="semestre" data-label="Total 2026" data-period="Março a Junho, 2026" role="tab">📊 Total</button>
+        </nav>
 
         <!-- Filters Section -->
         <section class="filters-section">

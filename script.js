@@ -82,6 +82,42 @@ const pieOptions = {
 let allRecords = [];
 let chartInstances = {};
 
+const SEMESTER_FILES = [
+    { file: 'BookingsReportingData.tsv',       label: 'Março 2026',    period: '01 a 31 de Março, 2026' },
+    { file: 'BookingsReportingDataAbril.tsv',  label: 'Abril 2026',   period: '01 a 30 de Abril, 2026' },
+    { file: 'BookingsReportingDataMaio.tsv',   label: 'Maio 2026',    period: '01 a 31 de Maio, 2026'  },
+    { file: 'BookingsReportingDataJunho.tsv',  label: 'Junho 2026',   period: '01 a 30 de Junho, 2026' },
+];
+
+async function loadTSV(filename) {
+    const response = await fetch(filename);
+    if (!response.ok) throw new Error(`Erro ao carregar ${filename}`);
+    return response.text();
+}
+
+async function loadAndRender(fileAttr, labelAttr, periodAttr) {
+    const subtitle = document.getElementById('dashboard-subtitle');
+    try {
+        if (fileAttr === 'semestre') {
+            if (subtitle) subtitle.textContent = `Visão Geral - 1º Semestre 2026 (Utilização dos Espaços)`;
+            const texts = await Promise.all(SEMESTER_FILES.map(m => loadTSV(m.file)));
+            // Process each file independently and merge allRecords arrays
+            allRecords = [];
+            for (const tsv of texts) {
+                parseRecords(tsv); // appends to allRecords
+            }
+            populateFilters();
+            applyFilters();
+        } else {
+            if (subtitle) subtitle.textContent = `Visão Geral - ${labelAttr} (Utilização dos Espaços)`;
+            const text = await loadTSV(fileAttr);
+            processData(text);
+        }
+    } catch (e) {
+        console.error('Erro ao carregar dados:', e);
+    }
+}
+
 // Data processing
 window.addEventListener('load', async () => {
     applyChartTheme();
@@ -100,20 +136,32 @@ window.addEventListener('load', async () => {
             
             setTimeout(() => {
                 applyChartTheme();
-                applyFilters(); // will re-render all graphs explicitly from current data 
+                applyFilters();
             }, 10);
         });
     }
 
-    try {
-        const response = await fetch('BookingsReportingDataJunho.tsv');
-        if (!response.ok) throw new Error('Não foi possível carregar os dados.');
-        const tsvText = await response.text();
-        processData(tsvText);
-    } catch (e) {
-        console.error('Erro ao carregar TSV:', e);
+    // Month tab setup
+    const tabs = document.querySelectorAll('.month-tab');
+    tabs.forEach(tab => {
+        tab.addEventListener('click', () => {
+            tabs.forEach(t => t.classList.remove('active'));
+            tab.classList.add('active');
+            loadAndRender(
+                tab.dataset.file,
+                tab.dataset.label,
+                tab.dataset.period
+            );
+        });
+    });
+
+    // Load default: Semestre
+    const activeTab = document.querySelector('.month-tab.active');
+    if (activeTab) {
+        loadAndRender(activeTab.dataset.file, activeTab.dataset.label, activeTab.dataset.period);
     }
 });
+
 
 function median(values) {
     if (values.length === 0) return 0;
@@ -123,7 +171,7 @@ function median(values) {
     return (values[half - 1] + values[half]) / 2.0;
 }
 
-function processData(tsv) {
+function parseRecords(tsv) {
     const lines = tsv.split('\n').map(line => line.trim()).filter(line => line.length > 0);
     if (lines.length < 2) return;
 
@@ -134,8 +182,6 @@ function processData(tsv) {
     const idxStaff = getIdx(['Staff Name', 'Nome do membro da equipe']);
     const idxDuration = getIdx(['Duration (mins.)', 'Duração (min.)']);
     const idxCustom = getIdx(['Custom Fields', 'Campos personalizados']);
-
-    allRecords = [];
 
     for (let i = 1; i < lines.length; i++) {
         const cols = lines[i].split('\t');
@@ -166,30 +212,26 @@ function processData(tsv) {
         // Name Normalization
         if (customer) {
             const lower = customer.toLowerCase();
-            if ((lower.includes('andrea') && lower.includes('ba')) || lower.includes('andrea batoni')) {
-                customer = 'Andrea Barassa';
-            } else if (lower.includes('eliana')) {
-                customer = 'Eliana Machado';
-            } else if (lower.includes('jose and') || lower.includes('josé and')) {
-                customer = 'José André';
-            } else if (lower.includes('manoela')) {
-                customer = 'Manoela Fonseca';
-            } else if (lower.includes('marina')) {
-                customer = 'Marina';
-            } else if (lower.includes('samanta')) {
-                customer = 'Samanta';
-            } else if (lower.includes('ederson')) {
-                customer = 'Ederson';
-            } else if (lower.includes('tamires')) {
-                customer = 'Tamires';
-            } else if (lower.includes('alyson') || lower.includes('alison')) {
-                customer = 'Alyson';
-            } else if (lower.includes('juliana')) {
-                customer = 'Juliana Petroli';
-            } else if (lower.includes('rosangela') || lower.includes('rosângela')) {
-                customer = 'Rosangela';
-            } else {
+            if (lower.includes('alyson') || lower.includes('alison')) customer = 'Alyson';
+            else if (lower.includes('andrea')) customer = 'Andrea';
+            else if (lower.includes('ederson')) customer = 'Ederson';
+            else if (lower.includes('edilaine')) customer = 'Edilaine';
+            else if (lower.includes('elaine')) customer = 'Elaine';
+            else if (lower.includes('eliana')) customer = 'Eliana';
+            else if (lower.includes('jose') || lower.includes('josé')) customer = 'José André';
+            else if (lower.includes('juliana')) customer = 'Juliana';
+            else if (lower.includes('luciano')) customer = 'Luciano';
+            else if (lower.includes('manoela')) customer = 'Manoela';
+            else if (lower.includes('marina')) customer = 'Marina';
+            else if (lower.includes('rosangela') || lower.includes('rosângela')) customer = 'Rosangela';
+            else if (lower.includes('samanta')) customer = 'Samanta';
+            else if (lower.includes('tamires')) customer = 'Tamires';
+            else if (lower.includes('vanessa')) customer = 'Vanessa';
+            else {
+                // Ensure spaces are just one, clear edges
                 customer = customer.replace(/\s+/g, ' ').trim();
+                // Fix partial names like 'Prof. Rodrigo'
+                if (customer.includes('Prof. ')) customer = customer.replace('Prof. ', '');
             }
         }
 
@@ -233,10 +275,15 @@ function processData(tsv) {
             laboratorio: lab
         });
     }
+}
 
+function processData(tsv) {
+    allRecords = [];
+    parseRecords(tsv);
     populateFilters();
     applyFilters();
 }
+
 
 function aggregateData(records) {
     let totalCargaMinutos = 0;
@@ -352,7 +399,10 @@ function sortObject(obj) {
 function prepareScrollContainer(canvasId, itemsLength, isHorizontal) {
     const canvas = document.getElementById(canvasId);
     if (!canvas) return;
-    const parent = canvas.parentElement;
+    
+    // Always find the original parent wrapper to avoid recursive nesting
+    const parent = canvas.closest('.chart-wrapper');
+    if (!parent) return;
     
     let inner = parent.querySelector('.chart-inner');
     if (!inner) {
@@ -362,9 +412,9 @@ function prepareScrollContainer(canvasId, itemsLength, isHorizontal) {
         inner.appendChild(canvas);
     }
     
-    if (isHorizontal && itemsLength > 4) {
+    if (isHorizontal && itemsLength > 5) {
         parent.style.overflowY = 'auto';
-        const reqHeight = Math.max(250, itemsLength * 35);
+        const reqHeight = Math.max(250, itemsLength * 30);
         inner.style.position = 'relative';
         inner.style.height = reqHeight + 'px';
         inner.style.width = '100%';

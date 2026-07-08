@@ -159,7 +159,50 @@ h1 {
     border-color: rgba(255, 255, 255, 0.2);
 }
 
+/* Month Tab Selector */
+.month-tabs {
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+    background: var(--card-bg);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid var(--card-border);
+    border-radius: 16px;
+    padding: 0.625rem;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+}
+
+.month-tab {
+    flex: 1;
+    min-width: 90px;
+    padding: 0.65rem 1.25rem;
+    border: 1px solid transparent;
+    border-radius: 10px;
+    background: transparent;
+    color: var(--text-muted);
+    font-family: var(--font-main);
+    font-size: 0.95rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.22s ease;
+    text-align: center;
+}
+
+.month-tab:hover {
+    background: var(--input-hover);
+    color: var(--text-main);
+}
+
+.month-tab.active {
+    background: var(--accent-1);
+    color: #fff;
+    border-color: var(--accent-1);
+    box-shadow: 0 4px 14px rgba(59, 130, 246, 0.35);
+}
+
 /* Filters Section */
+
 .filters-section {
     display: flex;
     flex-wrap: wrap;
